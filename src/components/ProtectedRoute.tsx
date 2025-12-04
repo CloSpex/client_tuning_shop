@@ -28,29 +28,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       </div>
     );
   }
-
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  } else if (user?.role !== requiredRole) {
+    return <Navigate to="*" state={{ from: location }} replace />;
+  } else {
+    return <>{children}</>;
   }
-
-  if (requiredRole && user?.role !== requiredRole) {
-    return (
-      <div
-        style={{
-          padding: "2rem",
-          textAlign: "center",
-          color: "red",
-        }}
-      >
-        <h2>Access Denied</h2>
-        <p>You don't have permission to access this page.</p>
-        <p>Required role: {requiredRole}</p>
-        <p>Your role: {user?.role || "Unknown"}</p>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
 };
 
 export default ProtectedRoute;

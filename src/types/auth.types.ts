@@ -1,30 +1,28 @@
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-}
+import type { User } from "./user.types";
 
-export interface LoginCredentials {
+export interface LoginDto {
   username: string;
   password: string;
 }
 
-// Backend response (tokens will be set as httpOnly cookies)
 export interface LoginResponse {
+  accessToken: string;
+  expiresAt: string;
   user: User;
-  message?: string;
+  message: string;
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+  expiresAt: string;
+  message: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<boolean>;
+  login: (credentials: LoginDto) => Promise<void>;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<boolean>;
-}
-
-export interface AuthProviderProps {
-  children: React.ReactNode;
+  navigate: (path: string) => void;
 }

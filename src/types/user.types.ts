@@ -1,17 +1,21 @@
-export interface User {
-  id: number;
-  name: string;
+import type { Base } from "./general.types";
+
+export interface User extends Base {
+  username: string;
   email: string;
-  createdAt: string;
+  role?: string;
+}
+export interface CreateUserDto {
+  username: string;
+  email: string;
+  password: string;
+}
+export interface UpdateUserDto {
+  username?: string;
+  email?: string;
+  password?: string;
 }
 
-export interface CreateUser {
-  name: string;
-  email: string;
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
+export interface UpdateRoleDto {
+  role: string;
 }

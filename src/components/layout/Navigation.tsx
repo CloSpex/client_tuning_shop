@@ -1,105 +1,80 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
-
-export interface NavigationItem {
-  path: string;
-  label: string;
-  requiresAuth?: boolean;
-}
-
-export const navigationItems: NavigationItem[] = [
-  { path: "/", label: "Home" },
-  { path: "/users", label: "Users", requiresAuth: true },
-];
+import { navigationItems } from "./NavigationItems";
 
 const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
-  };
-
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    await logout();
+    navigate("/");
   };
+  const visibleItems = navigationItems.filter((item) => {
+    if (item.requiresAuth && !isAuthenticated) {
+      return false;
+    }
 
-  const visibleItems = navigationItems.filter(
-    (item) => !item.requiresAuth || isAuthenticated
-  );
+    if (item.roles) {
+      const userRole = user?.role;
+      if (!userRole) {
+        return false;
+      }
+      return item.roles.includes(userRole);
+    }
+
+    return true;
+  });
 
   return (
-    <nav
-      style={{
-        padding: "1rem",
-        borderBottom: "1px solid #ccc",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      <div>
+    <nav className="w-full bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center">
+      <div className="space-x-3">
         {visibleItems.map((item) => (
           <button
             key={item.path}
-            onClick={() => handleNavigation(item.path)}
-            style={{
-              marginRight: "1rem",
-              padding: "0.5rem 1rem",
-              backgroundColor:
-                location.pathname === item.path ? "#007bff" : "#f8f9fa",
-              color: location.pathname === item.path ? "#fff" : "#000",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            onClick={() => navigate(item.path)}
+            className={`px-4 py-2 rounded-lg transition 
+            ${
+              location.pathname === item.path
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-200"
+            }`}
           >
             {item.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <div className="flex items-center gap-4">
         {isAuthenticated ? (
           <>
-            <span style={{ fontSize: "0.9rem", color: "#666" }}>
-              Welcome, {user?.username}
+            <span className="text-gray-600 dark:text-gray-300 text-sm">
+              Welcome, <span className="font-semibold">{user?.username}</span>
             </span>
             <button
               onClick={handleLogout}
-              style={{
-                padding: "0.5rem 1rem",
-                backgroundColor: "#dc3545",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
             >
               Logout
             </button>
           </>
         ) : (
-          <button
-            onClick={() => handleNavigation("/login")}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "#28a745",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Login
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/register")}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              Register
+            </button>
+            <button
+              onClick={() => navigate("/login")}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              Login
+            </button>
+          </div>
         )}
       </div>
     </nav>

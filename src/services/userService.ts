@@ -1,12 +1,16 @@
 import api from "../context/apiSetup";
-import type { User, CreateUser, ApiResponse } from "../types/user.types";
-
-export class UserService {
-  private static readonly BASE_PATH = "/users";
-
-  static async getAllUsers(): Promise<ApiResponse<User[]>> {
+import type {
+  User,
+  CreateUserDto,
+  UpdateRoleDto,
+  UpdateUserDto,
+} from "../types/user.types";
+import type { ApiResponse } from "../types/general.types";
+const BASE_PATH = "/users";
+export const UserService = {
+  async getAllUsers(): Promise<ApiResponse<User[]>> {
     try {
-      const response = await api.get<User[]>(this.BASE_PATH);
+      const response = await api.get<User[]>(BASE_PATH);
       return { data: response.data, success: true };
     } catch (error: unknown) {
       let message = "Failed to fetch users";
@@ -19,11 +23,11 @@ export class UserService {
         message,
       };
     }
-  }
+  },
 
-  static async getUserById(id: string): Promise<ApiResponse<User>> {
+  async getUserById(id: string): Promise<ApiResponse<User>> {
     try {
-      const response = await api.get<User>(`${this.BASE_PATH}/${id}`);
+      const response = await api.get<User>(`${BASE_PATH}/${id}`);
       return { data: response.data, success: true };
     } catch (error: unknown) {
       let message = "Failed to fetch user";
@@ -36,11 +40,11 @@ export class UserService {
         message,
       };
     }
-  }
+  },
 
-  static async createUser(user: CreateUser): Promise<ApiResponse<User>> {
+  async createUser(user: CreateUserDto): Promise<ApiResponse<User>> {
     try {
-      const response = await api.post<User>(this.BASE_PATH, user);
+      const response = await api.post<User>(BASE_PATH, user);
       return { data: response.data, success: true };
     } catch (error: unknown) {
       let message = "Failed to create user";
@@ -53,14 +57,41 @@ export class UserService {
         message,
       };
     }
-  }
+  },
+  async updateUserRole(
+    id: number,
 
-  static async updateUser(
-    id: string,
-    user: CreateUser
+    data: UpdateRoleDto
   ): Promise<ApiResponse<User>> {
     try {
-      const response = await api.put<User>(`${this.BASE_PATH}/${id}`, user);
+      const response = await api.patch<User>(`${BASE_PATH}/${id}/role`, data);
+
+      return {
+        success: true,
+
+        data: response.data,
+
+        message: "User role updated successfully",
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+
+        data: {} as User,
+
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Failed to update user role",
+      };
+    }
+  },
+  async updateUser(
+    id: string,
+    user: UpdateUserDto
+  ): Promise<ApiResponse<User>> {
+    try {
+      const response = await api.put<User>(`${BASE_PATH}/${id}`, user);
       return { data: response.data, success: true };
     } catch (error: unknown) {
       let message = "Failed to update user";
@@ -73,11 +104,11 @@ export class UserService {
         message,
       };
     }
-  }
+  },
 
-  static async deleteUser(id: string): Promise<ApiResponse<boolean>> {
+  async deleteUser(id: string): Promise<ApiResponse<boolean>> {
     try {
-      await api.delete(`${this.BASE_PATH}/${id}`);
+      await api.delete(`${BASE_PATH}/${id}`);
       return { data: true, success: true };
     } catch (error: unknown) {
       let message = "Failed to delete user";
@@ -90,5 +121,5 @@ export class UserService {
         message,
       };
     }
-  }
-}
+  },
+};

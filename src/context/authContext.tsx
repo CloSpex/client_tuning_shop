@@ -1,19 +1,77 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthService } from "../services/authService";
-import type {
-  AuthContextType,
-  AuthProviderProps,
-  User,
-  LoginCredentials,
-} from "../types/auth.types";
-
+import type { AuthContextType, LoginDto } from "../types/auth.types";
+import type { User } from "../types/user.types";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{
+  children: React.ReactNode;
+  navigate: (path: string) => void;
+}> = ({ children, navigate }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (token) {
+        try {
+          const user = await AuthService.getCurrentUser();
+          setUser(user);
+        } catch (error) {
+          console.error("Failed to restore session", error);
+          localStorage.removeItem("accessToken");
+          setUser(null);
+          if (window.location.pathname !== "/login") {
+            navigate("/login");
+          }
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
+  }, []);
+
+  const login = async (credentials: LoginDto) => {
+    setIsLoading(true);
+    try {
+      const user = await AuthService.login(credentials);
+      setUser(user);
+    } catch (error) {
+      console.error("Login failed", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await AuthService.logout();
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        logout,
+        navigate,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -21,95 +79,4 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const isAuthenticated = !!user;
-  useEffect(() => {
-    initializeAuth();
-  }, []);
-
-  const initializeAuth = async () => {
-    try {
-      const serverUser = await AuthService.checkAuthStatus();
-      setUser(serverUser);
-    } catch (error) {
-      console.error("Failed to initialize auth:", error);
-      await logout();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const login = async (credentials: LoginCredentials): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      const response = await AuthService.login(credentials);
-
-      if (response) {
-        setUser(response.user);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Login failed:", error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      await AuthService.logout();
-      setUser(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    try {
-      const success = await AuthService.refreshToken();
-      if (!success) {
-        await logout();
-      }
-      return success;
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-      await logout();
-      return false;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const interval = setInterval(async () => {
-      const user = await AuthService.checkAuthStatus();
-      if (!user) {
-        await logout();
-      }
-    }, 15 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
-
-  const value: AuthContextType = {
-    user,
-    isAuthenticated,
-    isLoading,
-    login,
-    logout,
-    refreshToken,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
