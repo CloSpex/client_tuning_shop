@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '24.x'
+          node-version: "24.x"
 
       - name: npm install, build, and test
         run: |
@@ -33,7 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: dist
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,11 +55,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_791C7052BCFE4CF8B550213B3A4FEC61 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_19601C708A4647039D49B5E997CA28D4 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'client-tuning-store'
-          slot-name: 'Production'
+          app-name: "client-tuning-store"
+          slot-name: "Production"
           package: .
-          
