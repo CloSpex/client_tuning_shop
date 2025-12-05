@@ -116,13 +116,29 @@ export const PartForm: React.FC<PartFormProps> = ({
       <label className="block text-sm font-medium text-gray-700 mb-2">
         Color *
       </label>
-      <input
-        type="text"
-        required
-        value={formData.color || ""}
-        onChange={(e) => onChange("color", e.target.value)}
-        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-      />
+      <div className="flex space-x-2">
+        <input
+          type="color"
+          required
+          value={
+            formData.color && /^#([0-9A-F]{3}){1,2}$/i.test(formData.color)
+              ? formData.color
+              : "#000000"
+          }
+          onChange={(e) => onChange("color", e.target.value.toUpperCase())}
+          className="h-10 w-12 p-0 border-none bg-transparent cursor-pointer rounded-lg overflow-hidden"
+          style={{ minWidth: "48px" }}
+        />
+        <input
+          type="text"
+          required
+          value={formData.color || ""}
+          onChange={(e) => onChange("color", e.target.value.toUpperCase())}
+          placeholder="#RRGGBB"
+          maxLength={7}
+          className="flex-grow px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 uppercase font-mono"
+        />
+      </div>
     </div>
 
     <div className="mb-4">

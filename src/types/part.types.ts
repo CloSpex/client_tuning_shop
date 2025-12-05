@@ -3,6 +3,7 @@ import type { BaseCreator } from "./general.types";
 export interface Part extends BaseCreator {
   name: string;
   price: number;
+  color: string;
   quantity: number;
   imagePath: string;
   carSpecificationId: number;

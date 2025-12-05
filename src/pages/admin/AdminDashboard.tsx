@@ -52,19 +52,34 @@ const AdminDashboard = () => {
     loadCategories();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === "models") {
+      setFilterModel("");
+      setFilterSpec("");
+    } else if (activeTab === "specifications") {
+      setFilterSpec("");
+    }
+  }, [filterBrand, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "specifications") {
+      setFilterSpec("");
+    }
+  }, [filterModel, activeTab]);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      if (activeTab === "brands") {
-        const res = await BrandService.getAllBrands();
-        if (res.success) setBrands(res.data);
-      } else if (activeTab === "models") {
-        const res = await ModelService.getAllModels();
-        if (res.success) setModels(res.data);
-      } else if (activeTab === "specifications") {
-        const res = await SpecificationService.getAllSpecifications();
-        if (res.success) setSpecifications(res.data);
-      } else if (activeTab === "parts") {
+      const brandsRes = await BrandService.getAllBrands();
+      if (brandsRes.success) setBrands(brandsRes.data);
+
+      const modelsRes = await ModelService.getAllModels();
+      if (modelsRes.success) setModels(modelsRes.data);
+
+      const specsRes = await SpecificationService.getAllSpecifications();
+      if (specsRes.success) setSpecifications(specsRes.data);
+
+      if (activeTab === "parts") {
         const res = await PartService.getAllParts();
         if (res.success) setParts(res.data);
       }
@@ -213,25 +228,17 @@ const AdminDashboard = () => {
       );
     }
 
-    if (activeTab === "models" && filterBrand) {
-      data = (data as Model[]).filter(
-        (m) => m.brandId === parseInt(filterBrand)
-      );
-    }
-
-    if (activeTab === "specifications" && filterModel) {
-      data = (data as Specification[]).filter(
-        (s) => s.modelId === parseInt(filterModel)
-      );
-    }
-
-    if (activeTab === "parts" && filterSpec) {
-      data = (data as Part[]).filter(
-        (p) => p.carSpecificationId === parseInt(filterSpec)
-      );
-    }
-
     return data;
+  };
+
+  const getAvailableModels = () => {
+    if (!filterBrand) return models;
+    return models.filter((m) => m.brandId === parseInt(filterBrand));
+  };
+
+  const getAvailableSpecifications = () => {
+    if (!filterModel) return specifications;
+    return specifications.filter((s) => s.modelId === parseInt(filterModel));
   };
 
   return (
@@ -278,7 +285,9 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {activeTab === "models" && (
+            {(activeTab === "models" ||
+              activeTab === "specifications" ||
+              activeTab === "parts") && (
               <select
                 value={filterBrand}
                 onChange={(e) => setFilterBrand(e.target.value)}
@@ -293,14 +302,15 @@ const AdminDashboard = () => {
               </select>
             )}
 
-            {activeTab === "specifications" && (
+            {(activeTab === "specifications" || activeTab === "parts") && (
               <select
                 value={filterModel}
                 onChange={(e) => setFilterModel(e.target.value)}
                 className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={!filterBrand}
               >
                 <option value="">All Models</option>
-                {models.map((m) => (
+                {getAvailableModels().map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
@@ -313,12 +323,29 @@ const AdminDashboard = () => {
                 value={filterSpec}
                 onChange={(e) => setFilterSpec(e.target.value)}
                 className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                disabled={!filterModel}
               >
                 <option value="">All Specifications</option>
-                {specifications.map((s) => (
+                {getAvailableSpecifications().map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.powerKilowatts}kw, {s.volumeLitres}l, {s.yearStart}-
-                    {s.yearEnd}
+                    {
+                      vehicleTypes.bodyTypes.find((e) => e.id === s.bodyTypeId)
+                        ?.name
+                    }
+                    ,{" "}
+                    {
+                      vehicleTypes.transmissionTypes.find(
+                        (e) => e.id === s.transmissionTypeId
+                      )?.name
+                    }
+                    ,{" "}
+                    {
+                      vehicleTypes.engineTypes.find(
+                        (e) => e.id === s.engineTypeId
+                      )?.name
+                    }
+                    , {s.powerKilowatts}kw, {s.volumeLitres}l, {s.yearStart}-
+                    {s.yearEnd ?? " now"}
                   </option>
                 ))}
               </select>
@@ -350,6 +377,7 @@ const AdminDashboard = () => {
                 <ModelsTable
                   data={getFilteredData() as Model[]}
                   brands={brands}
+                  selectedBrandId={filterBrand ? parseInt(filterBrand) : null}
                   onEdit={openEditForm}
                   onDelete={handleDelete}
                 />
@@ -359,6 +387,7 @@ const AdminDashboard = () => {
                   data={getFilteredData() as Specification[]}
                   models={models}
                   vehicleTypes={vehicleTypes}
+                  selectedModelId={filterModel ? parseInt(filterModel) : null}
                   onEdit={openEditForm}
                   onDelete={handleDelete}
                 />
@@ -370,6 +399,9 @@ const AdminDashboard = () => {
                   categories={categories}
                   models={models}
                   vehicleTypes={vehicleTypes}
+                  selectedSpecificationId={
+                    filterSpec ? parseInt(filterSpec) : null
+                  }
                   onEdit={openEditForm}
                   onDelete={handleDelete}
                 />

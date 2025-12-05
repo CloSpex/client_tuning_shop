@@ -13,6 +13,8 @@ import type { Specification } from "../../types/specification.types";
 import type { Part } from "../../types/part.types";
 import type { PartCategory } from "../../types/partCategory.types";
 import type { CreateOrder, CreateOrderItem } from "../../types/order.types";
+import { EnumService } from "../../services/enumService";
+import type { VehicleTypes } from "../../types/enum.types";
 
 interface CartItem {
   part: Part;
@@ -36,7 +38,11 @@ const CreateOrderPage: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
-
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleTypes>({
+    engineTypes: [],
+    transmissionTypes: [],
+    bodyTypes: [],
+  });
   const [cart, setCart] = useState<CartItem[]>(() => {
     const savedCart = localStorage.getItem("shoppingCart");
     return savedCart ? JSON.parse(savedCart) : [];
@@ -46,7 +52,14 @@ const CreateOrderPage: React.FC = () => {
     type: "success" | "error";
     text: string;
   } | null>(null);
-
+  const loadEnums = async () => {
+    try {
+      const res = await EnumService.getAllVehicleTypes();
+      if (res.success) setVehicleTypes(res.data);
+    } catch (error) {
+      console.error("Failed to load enums:", error);
+    }
+  };
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -59,6 +72,7 @@ const CreateOrderPage: React.FC = () => {
       if (brandsRes.success) setBrands(brandsRes.data);
       if (categoriesRes.success) setCategories(categoriesRes.data);
       if (partsRes.success) setAllParts(partsRes.data);
+      loadEnums();
       setIsLoading(false);
     };
     fetchData();
@@ -259,7 +273,7 @@ const CreateOrderPage: React.FC = () => {
                 onChange={(e) =>
                   setSelectedBrandId(parseInt(e.target.value) || null)
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
+                className="mt-1 block w-full dark:text-gray-200 rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
                 disabled={isLoading}
               >
                 <option value="">Select Brand</option>
@@ -278,7 +292,7 @@ const CreateOrderPage: React.FC = () => {
                 onChange={(e) =>
                   setSelectedModelId(parseInt(e.target.value) || null)
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
+                className="mt-1 block w-full dark:text-gray-200 rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
                 disabled={!selectedBrandId || isLoading}
               >
                 <option value="">Select Model</option>
@@ -302,7 +316,7 @@ const CreateOrderPage: React.FC = () => {
                     specifications.find((s) => s.id === specId) ?? null;
                   setSelectedSpecification(spec);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
+                className="mt-1 block w-full dark:text-gray-200 rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
                 disabled={
                   !selectedModelId || isLoading || specifications.length === 0
                 }
@@ -310,7 +324,24 @@ const CreateOrderPage: React.FC = () => {
                 <option value="">Select Specification</option>
                 {specifications.map((s) => (
                   <option key={s.id} value={s.id}>
-                    ({s.powerKilowatts}kw / {s.volumeLitres})l
+                    {
+                      vehicleTypes.bodyTypes.find((e) => e.id === s.bodyTypeId)
+                        ?.name
+                    }
+                    ,{" "}
+                    {
+                      vehicleTypes.transmissionTypes.find(
+                        (e) => e.id === s.transmissionTypeId
+                      )?.name
+                    }
+                    ,{" "}
+                    {
+                      vehicleTypes.engineTypes.find(
+                        (e) => e.id === s.engineTypeId
+                      )?.name
+                    }
+                    , {s.powerKilowatts}kw, {s.volumeLitres}l, {s.yearStart}-
+                    {s.yearEnd ?? " now"}
                   </option>
                 ))}
               </select>
@@ -372,7 +403,6 @@ const CreateOrderPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredParts.length === 0 ? (
                   <p className="md:col-span-2 text-center py-8 text-gray-500">
@@ -383,10 +413,11 @@ const CreateOrderPage: React.FC = () => {
                   filteredParts.map((part) => (
                     <div
                       key={part.id}
-                      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex justify-between items-center"
+                      className="bg-white  dark:text-gray-200 dark:bg-gray-800 p-4 rounded-lg shadow-md flex justify-between items-center"
                     >
-                      <div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                      <div className="flex-grow pr-4 min-w-0">
+                        {" "}
+                        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 **truncate**">
                           {part.name}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
